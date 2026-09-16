@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard - Facility Reservation System</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <h1>Facility Reservation and Service Request Management System</h1>
+    <button class="btn-small btn-danger" onclick="logoutUser()">Logout</button>
+  </header>
+
+  <main class="container">
+
+    <!-- DASHBOARD STATS (old equipment stats, kept as-is) -->
+    <section class="stats-grid">
+      <div class="stat-card"><h3 id="statTotal">0</h3><p>Total Equipment</p></div>
+      <div class="stat-card"><h3 id="statAvailable">0</h3><p>Available</p></div>
+      <div class="stat-card"><h3 id="statBorrowed">0</h3><p>Borrowed</p></div>
+      <div class="stat-card"><h3 id="statReturned">0</h3><p>Returned</p></div>
+      <div class="stat-card"><h3 id="statOverdue">0</h3><p>Overdue</p></div>
+    </section>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('equipmentTab', this)">Equipment</button>
+      <button class="tab-btn" onclick="showTab('transactionsTab', this)">Transactions</button>
+      <button class="tab-btn" onclick="showTab('facilitiesTab', this)">Facilities</button>
+      <button class="tab-btn" onclick="showTab('reservationsTab', this)">Reservations</button>
+      <button class="tab-btn admin-only staff-only" onclick="showTab('auditTab', this)">Audit Logs</button>
+    </div>
+
+    <!-- EQUIPMENT TAB -->
+    <section id="equipmentTab" class="tab-content">
+      <div class="toolbar">
+        <input type="text" id="equipmentSearchInput" placeholder="Search name or asset code..." oninput="searchEquipment()">
+        <select id="equipmentFilterSelect" onchange="filterEquipment()">
+          <option value="All">All</option>
+          <option value="Available">Available</option>
+          <option value="Borrowed">Borrowed</option>
+        </select>
+        <button onclick="openAddEquipment()">+ Add Equipment</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Asset Code</th><th>Name</th><th>Category</th><th>Condition</th><th>Availability</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="equipmentTableBody"></tbody>
+      </table>
+    </section>
+
+    <!-- TRANSACTIONS TAB -->
+    <section id="transactionsTab" class="tab-content hidden">
+      <div class="toolbar">
+        <input type="text" id="transactionSearchInput" placeholder="Search borrower name..." oninput="searchTransactions()">
+        <select id="transactionFilterSelect" onchange="filterTransactions()">
+          <option value="All">All</option>
+          <option value="Borrowed">Borrowed</option>
+          <option value="Returned">Returned</option>
+          <option value="Overdue">Overdue</option>
+        </select>
+        <button onclick="openBorrowForm()">+ New Borrowing</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Equipment</th><th>Borrower</th><th>Type</th><th>Department</th><th>Borrowed</th><th>Due</th><th>Returned</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody id="transactionsTableBody"></tbody>
+      </table>
+    </section>
+
+    <!-- FACILITIES TAB (Lab 4 - new) -->
+    <section id="facilitiesTab" class="tab-content hidden">
+      <div class="toolbar">
+        <button class="admin-only staff-only" onclick="openAddFacility()">+ Add Facility</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Code</th><th>Name</th><th>Type</th><th>Condition</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="facilitiesTableBody"></tbody>
+      </table>
+    </section>
+
+    <!-- RESERVATIONS TAB (Lab 4 - new) -->
+    <section id="reservationsTab" class="tab-content hidden">
+      <div class="toolbar">
+        <button class="requester-only" onclick="openAddReservation()">+ New Reservation</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Facility</th><th>Purpose</th><th>Start</th><th>End</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody id="reservationsTableBody"></tbody>
+      </table>
+    </section>
+
+    <!-- AUDIT LOG TAB (Lab 4 - new, admin/staff only) -->
+    <section id="auditTab" class="tab-content hidden">
+      <table>
+        <thead>
+          <tr><th>Date/Time</th><th>Action</th><th>Table</th></tr>
+        </thead>
+        <tbody id="auditLogsTableBody"></tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <!-- ADD/EDIT EQUIPMENT MODAL -->
+  <div id="equipmentFormBox" class="modal hidden">
+    <div class="modal-box">
+      <h3 id="equipmentFormTitle">Add Equipment</h3>
+      <form id="equipmentForm" onsubmit="saveEquipment(event)">
+        <input type="hidden" id="equipmentId">
+        <label>Equipment Name</label>
+        <input type="text" id="equipmentName" required>
+        <label>Category</label>
+        <input type="text" id="equipmentCategory" required>
+        <label>Asset Code</label>
+        <input type="text" id="equipmentAssetCode" required>
+        <label>Condition</label>
+        <select id="equipmentCondition">
+          <option>Good</option>
+          <option>Fair</option>
+          <option>For Repair</option>
+        </select>
+        <p id="equipmentMessage" class="message"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeEquipmentForm()">Cancel</button>
+          <button type="submit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- NEW BORROWING MODAL -->
+  <div id="borrowFormBox" class="modal hidden">
+    <div class="modal-box">
+      <h3>New Borrowing Transaction</h3>
+      <form id="borrowForm" onsubmit="recordBorrowing(event)">
+        <label>Borrower Name</label>
+        <input type="text" id="borrowerName" required>
+        <label>Borrower Type</label>
+        <select id="borrowerType">
+          <option>Student</option>
+          <option>Faculty</option>
+          <option>Staff</option>
+        </select>
+        <label>Department</label>
+        <input type="text" id="borrowDepartment" required>
+        <label>Equipment</label>
+        <select id="borrowEquipmentSelect" required></select>
+        <label>Date Borrowed</label>
+        <input type="date" id="dateBorrowed" required>
+        <label>Due Date</label>
+        <input type="date" id="dueDate" required>
+        <p id="borrowMessage" class="message"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeBorrowForm()">Cancel</button>
+          <button type="submit">Save Borrowing Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ADD/EDIT FACILITY MODAL -->
+  <div id="facilityFormBox" class="modal hidden">
+    <div class="modal-box">
+      <h3 id="facilityFormTitle">Add Facility</h3>
+      <form id="facilityForm" onsubmit="saveFacility(event)">
+        <input type="hidden" id="facilityId">
+        <label>Facility Name</label>
+        <input type="text" id="facilityName" required>
+        <label>Type</label>
+        <input type="text" id="facilityType">
+        <label>Facility Code</label>
+        <input type="text" id="facilityCode" required>
+        <label>Condition</label>
+        <select id="facilityCondition">
+          <option>Good</option>
+          <option>Fair</option>
+          <option>For Repair</option>
+        </select>
+        <label>Status</label>
+        <select id="facilityStatus">
+          <option>Active</option>
+          <option>Maintenance</option>
+          <option>Inactive</option>
+        </select>
+        <p id="facilityMessage" class="message"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeFacilityForm()">Cancel</button>
+          <button type="submit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- NEW RESERVATION MODAL -->
+  <div id="reservationFormBox" class="modal hidden">
+    <div class="modal-box">
+      <h3>New Reservation</h3>
+      <form id="reservationForm" onsubmit="submitReservation(event)">
+        <label>Facility</label>
+        <select id="reservationFacilitySelect" required></select>
+        <label>Purpose</label>
+        <input type="text" id="reservationPurpose" required>
+        <label>Start Time</label>
+        <input type="datetime-local" id="reservationStart" required>
+        <label>End Time</label>
+        <input type="datetime-local" id="reservationEnd" required>
+        <p id="reservationMessage" class="message"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeReservationForm()">Cancel</button>
+          <button type="submit">Submit Reservation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/equipment.js"></script>
+  <script src="js/transactions.js"></script>
+  <script src="js/facilities.js"></script>
+  <script src="js/reservations.js"></script>
+  <script>
+    function showTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    // Page init: require login, then load data
+    (async () => {
+      const user = await requireLogin();
+      if (!user) return;
+      await loadCurrentUserRole();
+      await loadEquipment();
+      await loadTransactions();
+      await loadFacilities();
+      await loadReservations();
+      await loadAuditLogs();
+    })();
+  </script>
+</body>
+</html>

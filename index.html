@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login - Equipment Borrowing System</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="login-box">
+    <h2>Equipment Borrowing<br>Monitoring System</h2>
+    <p class="subtitle">Please login to continue</p>
+
+    <form id="loginForm">
+      <label>Email</label>
+      <input type="email" id="email" required placeholder="you@example.com">
+
+      <label>Password</label>
+      <input type="password" id="password" required placeholder="••••••••">
+
+      <button type="submit">Login</button>
+      <p id="loginMessage" class="message"></p>
+    </form>
+  </div>
+
+  <!-- Supabase JS library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // If already logged in, go straight to dashboard
+    checkSessionRedirect();
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const msg = document.getElementById('loginMessage');
+      msg.textContent = 'Logging in...';
+
+      const { error } = await loginUser(email, password);
+      if (error) {
+        msg.textContent = error.message;
+        msg.style.color = 'red';
+      } else {
+        window.location.href = 'dashboard.html';
+      }
+    });
+  </script>
+</body>
+</html>
