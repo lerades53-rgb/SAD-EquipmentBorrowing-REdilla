@@ -59,7 +59,7 @@ function renderReservationsTable(list) {
       <td>${r.purpose || ''}</td>
       <td>${new Date(r.start_time).toLocaleString()}</td>
       <td>${new Date(r.end_time).toLocaleString()}</td>
-      <td><span class="badge">${r.status}</span></td>
+      <td><span class="badge ${getStatusBadgeClass(r.status)}">${r.status}</span></td>
       <td>${renderReservationActions(r)}</td>
     `;
     tbody.appendChild(tr);
@@ -189,3 +189,16 @@ async function loadAuditLogs() {
   });
 }
 
+// Return a CSS badge class depending on the reservation status
+function getStatusBadgeClass(status) {
+  switch (status) {
+    case 'Pending': return 'badge-orange';
+    case 'Approved':
+    case 'Scheduled': return 'badge-blue';
+    case 'In Use': return 'badge-blue';
+    case 'Completed': return 'badge-green';
+    case 'Rejected':
+    case 'Cancelled': return 'badge-red';
+    default: return 'badge-orange';
+  }
+}
